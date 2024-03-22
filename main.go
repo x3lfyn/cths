@@ -14,9 +14,10 @@ import (
 type gotRequestMsg struct{ data *http.Request }
 
 type model struct {
-	spinner  spinner.Model
-	requests []*http.Request
-	err      error
+	spinner              spinner.Model
+	requests             []*http.Request
+	selectedRequestIndex int
+	err                  error
 }
 
 func initialModel() model {
@@ -24,11 +25,11 @@ func initialModel() model {
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
-	return model{spinner: s}
+	return model{spinner: s, selectedRequestIndex: -1}
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(m.spinner.Tick)
+	return tea.Batch(m.spinner.Tick, tea.EnterAltScreen)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -37,12 +38,25 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
+		case "up":
+			if len(m.requests) != 0 && (m.selectedRequestIndex-1 >= 0) {
+				m.selectedRequestIndex -= 1
+			}
+			return m, nil
+		case "down":
+			if len(m.requests) != 0 && (m.selectedRequestIndex+1) < len(m.requests) {
+				m.selectedRequestIndex += 1
+			}
+			return m, nil
 		default:
 			return m, nil
 		}
 
 	case gotRequestMsg:
 		m.requests = append(m.requests, msg.data)
+		if len(m.requests) == 1 {
+			m.selectedRequestIndex = 0
+		}
 		return m, nil
 
 	case error:
@@ -69,6 +83,13 @@ func (m model) View() string {
 		}
 	}
 
+	var curReqStr string
+	if m.selectedRequestIndex == -1 {
+		curReqStr = "fuckme"
+	} else {
+		curReqStr = renderRequest(m.requests[m.selectedRequestIndex])
+	}
+
 	blocKStyle := lipgloss.NewStyle().Padding(0, 1).BorderStyle(lipgloss.RoundedBorder())
 
 	termWidth, _, _ := term.GetSize(int(os.Stdout.Fd()))
@@ -81,7 +102,7 @@ func (m model) View() string {
 		"%s", strings.Repeat(" ", termWidth/2-4), m.spinner.View(), reqsStr))
 
 	block2 := blocKStyle.Render(
-		fmt.Sprintf("%s\nfuckfuckfuck\n", strings.Repeat(" ", termWidth/2-4)))
+		fmt.Sprintf("%s\n%s\n", strings.Repeat(" ", termWidth/2-4), curReqStr))
 
 	res.WriteString(
 		lipgloss.JoinHorizontal(lipgloss.Top, block1, block2),
