@@ -5,8 +5,10 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"golang.org/x/term"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type gotRequestMsg struct{ data *http.Request }
@@ -67,12 +69,25 @@ func (m model) View() string {
 		}
 	}
 
-	res := fmt.Sprintf("\n"+
+	blocKStyle := lipgloss.NewStyle().Padding(0, 1).BorderStyle(lipgloss.RoundedBorder())
+
+	termWidth, _, _ := term.GetSize(int(os.Stdout.Fd()))
+
+	res := strings.Builder{}
+
+	block1 := blocKStyle.Render(fmt.Sprintf("%s\n"+
 		" %s Listening to requests\n\n"+
 		"Requests:\n"+
-		"%s", m.spinner.View(), reqsStr)
+		"%s", strings.Repeat(" ", termWidth/2-4), m.spinner.View(), reqsStr))
 
-	return res
+	block2 := blocKStyle.Render(
+		fmt.Sprintf("%s\nfuckfuckfuck\n", strings.Repeat(" ", termWidth/2-4)))
+
+	res.WriteString(
+		lipgloss.JoinHorizontal(lipgloss.Top, block1, block2),
+	)
+
+	return res.String()
 }
 
 func main() {
