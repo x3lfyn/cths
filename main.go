@@ -9,13 +9,19 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
-type gotRequestMsg struct{ data *http.Request }
+type gotRequestMsg struct{ data HttpRequest }
+
+type HttpRequest struct {
+	req  *http.Request
+	time time.Time
+}
 
 type model struct {
 	spinner              spinner.Model
-	requests             []*http.Request
+	requests             []HttpRequest
 	selectedRequestIndex int
 	err                  error
 }
@@ -77,9 +83,15 @@ func (m model) View() string {
 
 	var reqsStr string
 	for i, req := range m.requests {
-		reqsStr += renderRequest(req)
+		var style lipgloss.Style
+		if i == m.selectedRequestIndex {
+			style = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("36"))
+		} else {
+			style = lipgloss.NewStyle()
+		}
+		reqsStr += style.Render(req.time.Format(time.TimeOnly) + " " + req.req.RequestURI)
 		if i != len(m.requests)-1 {
-			reqsStr += "\n\n"
+			reqsStr += "\n"
 		}
 	}
 
@@ -98,7 +110,6 @@ func (m model) View() string {
 
 	block1 := blocKStyle.Render(fmt.Sprintf("%s\n"+
 		" %s Listening to requests\n\n"+
-		"Requests:\n"+
 		"%s", strings.Repeat(" ", termWidth/2-4), m.spinner.View(), reqsStr))
 
 	block2 := blocKStyle.Render(
