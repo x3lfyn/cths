@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"net/http"
 	"time"
@@ -9,10 +8,7 @@ import (
 
 func listener(p *tea.Program) {
 	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		_, err := fmt.Fprintf(writer, "fuck\n")
-		if err != nil {
-			return
-		}
+		http.FileServer(http.Dir(".")).ServeHTTP(writer, request)
 
 		p.Send(gotRequestMsg{data: HttpRequest{request, time.Now()}})
 	})
