@@ -97,7 +97,7 @@ func (m model) View() string {
 
 	var curReqStr string
 	if m.selectedRequestIndex == -1 {
-		curReqStr = "fuckme"
+		curReqStr = "No requests"
 	} else {
 		curReqStr = renderRequest(m.requests[m.selectedRequestIndex])
 	}
