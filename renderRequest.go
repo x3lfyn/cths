@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/charmbracelet/lipgloss"
-	"io"
 	"sort"
 	"strconv"
 	"strings"
@@ -31,11 +30,7 @@ func renderRequest(req HttpRequest) string {
 		strings.Join(headers, "\n"),
 	)
 
-	b, err := io.ReadAll(req.req.Body)
-	if err != nil {
-		panic(err)
-	}
-	res += fmt.Sprintf("\n\n%s", string(b))
+	res += fmt.Sprintf("\n\n%s", req.body)
 
 	return res
 }

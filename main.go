@@ -17,6 +17,7 @@ type gotRequestMsg struct{ data HttpRequest }
 type HttpRequest struct {
 	req  *http.Request
 	time time.Time
+	body string
 }
 
 type model struct {
