@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"flag"
 )
 
 type gotRequestMsg struct{ data HttpRequest }
@@ -26,6 +27,8 @@ type model struct {
 	selectedRequestIndex int
 	err                  error
 }
+
+var ListenAddr string
 
 func initialModel() model {
 	s := spinner.New()
@@ -110,8 +113,8 @@ func (m model) View() string {
 	res := strings.Builder{}
 
 	block1 := blocKStyle.Render(fmt.Sprintf("%s\n"+
-		" %s Listening to requests\n\n"+
-		"%s", strings.Repeat(" ", termWidth/2-4), m.spinner.View(), reqsStr))
+		" %s Listening on %s\n\n"+
+		"%s", strings.Repeat(" ", termWidth/2-4), m.spinner.View(), ListenAddr, reqsStr))
 
 	block2 := blocKStyle.Render(
 		fmt.Sprintf("%s\n%s\n", strings.Repeat(" ", termWidth/2-4), curReqStr))
@@ -124,9 +127,14 @@ func (m model) View() string {
 }
 
 func main() {
+	addressPtr := flag.String("address", "0.0.0.0:6969", "Address to listen on")
+
+	flag.Parse()
+	ListenAddr = *addressPtr
+
 	p := tea.NewProgram(initialModel())
 
-	go listener(p)
+	go listener(p, ListenAddr)
 
 	if _, err := p.Run(); err != nil {
 		fmt.Println(err)

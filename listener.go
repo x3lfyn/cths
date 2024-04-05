@@ -7,7 +7,7 @@ import (
 	"io"
 )
 
-func listener(p *tea.Program) {
+func listener(p *tea.Program, listenAddr string) {
 	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		http.FileServer(http.Dir(".")).ServeHTTP(writer, request)
 
@@ -19,8 +19,8 @@ func listener(p *tea.Program) {
 		p.Send(gotRequestMsg{data: HttpRequest{request, time.Now(), string(b)}})
 	})
 
-	err := http.ListenAndServe("0.0.0.0:9999", nil)
+	err := http.ListenAndServe(listenAddr, nil)
 	if err != nil {
-		panic("fuck!!!")
+		panic(err)
 	}
 }
