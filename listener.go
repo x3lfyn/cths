@@ -2,46 +2,41 @@ package main
 
 import (
 	"fmt"
+	tea "github.com/charmbracelet/bubbletea"
 	"io"
 	"net/http"
 	"os"
 	"time"
 )
 
-func responder(writer http.ResponseWriter, request *http.Request) {
-	if state.responder == "fileserver" {
-		http.FileServer(http.Dir(".")).ServeHTTP(writer, request)
-	} else if state.responder == "file" {
-		file, err := os.ReadFile(state.file)
+func RequestCatcher(handler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		handler(writer, request)
+
+		b, err := io.ReadAll(request.Body)
 		if err != nil {
 			panic(err)
 		}
 
-		writer.WriteHeader(http.StatusOK)
-		writer.Header().Set("Content-Type", "application/octet-stream")
-		writer.Write(file)
-
-	} else {
-		fmt.Fprint(writer, state.string)
+		GlobalState.teaProgram.Send(gotRequestMsg{data: HttpRequest{request, time.Now(), string(b)}})
 	}
-
-	b, err := io.ReadAll(request.Body)
-	if err != nil {
-		panic(err)
-	}
-
-	state.program.Send(gotRequestMsg{data: HttpRequest{request, time.Now(), string(b)}})
 }
 
-func listener() {
-	if state.responder == "FileServer" {
+func RunServerAndTui(handler func(http.ResponseWriter, *http.Request)) {
+	p := tea.NewProgram(initialModel())
+	GlobalState.teaProgram = p
 
-	}
+	go func() {
+		http.HandleFunc("/", RequestCatcher(handler))
 
-	http.HandleFunc("/", responder)
+		err := http.ListenAndServe(GlobalState.listenAddress, nil)
+		if err != nil {
+			panic(err)
+		}
+	}()
 
-	err := http.ListenAndServe(state.address, nil)
-	if err != nil {
-		panic(err)
+	if _, err := p.Run(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
