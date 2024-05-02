@@ -139,7 +139,7 @@ func main() {
 	addressPtr := flag.String("address", "0.0.0.0:6969", "Address to listen on")
 	responderPtr := flag.String("responder", "string", "Determines server response type [fileserver/file/string/]")
 	stringPtr := flag.String("string", "meow", "Response string when responder=string")
-	filePtr := flag.String("file", ".", "Response file when responder=file")
+	filePtr := flag.String("file", "/etc/passwd", "Response file when responder=file")
 
 	flag.Parse()
 	p := tea.NewProgram(initialModel())
