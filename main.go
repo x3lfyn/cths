@@ -1,19 +1,28 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"golang.org/x/term"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-	"flag"
+
+	"github.com/charmbracelet/bubbles/spinner"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"golang.org/x/term"
 )
 
 type gotRequestMsg struct{ data HttpRequest }
+
+type State struct {
+	address   string
+	responder string
+	file      string
+	string    string
+	program   *tea.Program
+}
 
 type HttpRequest struct {
 	req  *http.Request
@@ -28,7 +37,7 @@ type model struct {
 	err                  error
 }
 
-var ListenAddr string
+var state State
 
 func initialModel() model {
 	s := spinner.New()
@@ -114,7 +123,7 @@ func (m model) View() string {
 
 	block1 := blocKStyle.Render(fmt.Sprintf("%s\n"+
 		" %s Listening on %s\n\n"+
-		"%s", strings.Repeat(" ", termWidth/2-4), m.spinner.View(), ListenAddr, reqsStr))
+		"%s", strings.Repeat(" ", termWidth/2-4), m.spinner.View(), state.address, reqsStr))
 
 	block2 := blocKStyle.Render(
 		fmt.Sprintf("%s\n%s\n", strings.Repeat(" ", termWidth/2-4), curReqStr))
@@ -128,13 +137,20 @@ func (m model) View() string {
 
 func main() {
 	addressPtr := flag.String("address", "0.0.0.0:6969", "Address to listen on")
+	responderPtr := flag.String("responder", "string", "Determines server response type [fileserver/file/string/]")
+	stringPtr := flag.String("string", "meow", "Response string when responder=string")
+	filePtr := flag.String("file", ".", "Response file when responder=file")
 
 	flag.Parse()
-	ListenAddr = *addressPtr
-
 	p := tea.NewProgram(initialModel())
 
-	go listener(p, ListenAddr)
+	state.address = *addressPtr
+	state.responder = *responderPtr
+	state.string = *stringPtr
+	state.file = *filePtr
+	state.program = p
+
+	go listener()
 
 	if _, err := p.Run(); err != nil {
 		fmt.Println(err)
