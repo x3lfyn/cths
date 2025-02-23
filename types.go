@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
 	"net/http"
 	"time"
+
+	"github.com/charmbracelet/bubbles/spinner"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type gotRequestMsg struct{ data HttpRequest }
@@ -26,4 +27,5 @@ type model struct {
 	requests             []HttpRequest
 	selectedRequestIndex int
 	err                  error
+	width                int
 }

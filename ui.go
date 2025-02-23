@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
-	"os"
-	"strings"
-	"time"
 )
 
 func initialModel() model {
@@ -16,7 +17,8 @@ func initialModel() model {
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
-	return model{spinner: s, selectedRequestIndex: -1}
+	termWidth, _, _ := term.GetSize(int(os.Stdout.Fd()))
+	return model{spinner: s, selectedRequestIndex: -1, width: termWidth}
 }
 
 func (m model) Init() tea.Cmd {
@@ -50,6 +52,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		return m, nil
+
 	case error:
 		m.err = msg
 		return m, nil
@@ -80,25 +86,24 @@ func (m model) View() string {
 		}
 	}
 
+	blockStyle := lipgloss.NewStyle().Padding(0, 1).BorderStyle(lipgloss.RoundedBorder())
+	blockWidth := m.width/2 - 4
+
 	var curReqStr string
 	if m.selectedRequestIndex == -1 {
 		curReqStr = "No requests"
 	} else {
-		curReqStr = renderRequest(m.requests[m.selectedRequestIndex])
+		curReqStr = renderRequest(m.requests[m.selectedRequestIndex], blockWidth)
 	}
-
-	blocKStyle := lipgloss.NewStyle().Padding(0, 1).BorderStyle(lipgloss.RoundedBorder())
-
-	termWidth, _, _ := term.GetSize(int(os.Stdout.Fd()))
 
 	res := strings.Builder{}
 
-	block1 := blocKStyle.Render(fmt.Sprintf("%s\n"+
+	block1 := blockStyle.Render(fmt.Sprintf("%s\n"+
 		" %s Listening on %s\n\n"+
-		"%s", strings.Repeat(" ", termWidth/2-4), m.spinner.View(), GlobalState.listenAddress, reqsStr))
+		"%s", strings.Repeat(" ", blockWidth), m.spinner.View(), GlobalState.listenAddress, reqsStr))
 
-	block2 := blocKStyle.Render(
-		fmt.Sprintf("%s\n%s\n", strings.Repeat(" ", termWidth/2-4), curReqStr))
+	block2 := blockStyle.Render(
+		fmt.Sprintf("%s\n%s\n", strings.Repeat(" ", blockWidth), curReqStr))
 
 	res.WriteString(
 		lipgloss.JoinHorizontal(lipgloss.Top, block1, block2),
