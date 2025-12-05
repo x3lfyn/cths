@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  cths:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cths
+    ports:
+      - "6969:6969"
+    volumes:
+      - ./payload:/app/payload:ro
+    environment:
+      - FLAG_POSTER_URL=http://localhost:1234
+      - FLAG_POSTER_REGEX=[A-Z0-9]{31}=
+      - FLAG_POSTER_PASSWORD=idk
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:6969"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
